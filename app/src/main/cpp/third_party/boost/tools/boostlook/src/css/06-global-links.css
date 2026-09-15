@@ -1,0 +1,152 @@
+
+/* Paragraphs */
+.boostlook p {
+  padding-top: initial !important;
+  padding-bottom: initial !important;
+  color: var(--text-main-text-body-secondary, #585A64);
+  font-size: var(--doc-body-size, 1rem);
+  line-height: var(--doc-body-line-height, 1.6);
+  letter-spacing: -0.01em;
+}
+
+/* Vertical rhythm: a single gap between sibling blocks, everywhere */
+.boostlook.boostlook .sectionbody > :not(h1, h2, h3, h4, h5, h6) + :not(.colist, .sect2, .sect3, .sect4, .sect5),
+.boostlook.boostlook :is(.sect2, .sect3, .sect4, .sect5) > :not(h1, h2, h3, h4, h5, h6) + :not(.colist, .sect2, .sect3, .sect4, .sect5),
+.boostlook.boostlook .tabpanel > :not(h1, h2, h3, h4, h5, h6) + :not(.colist),
+.boostlook.boostlook .openblock:not(.tabs) > .content > :not(h1, h2, h3, h4, h5, h6) + :not(.colist),
+.boostlook.boostlook .admonitionblock td.content > :not(h1, h2, h3, h4, h5, h6) + :not(.colist),
+.boostlook.boostlook .exampleblock > .content > :not(h1, h2, h3, h4, h5, h6) + :not(.colist),
+.boostlook.boostlook .sidebarblock > .content > :not(h1, h2, h3, h4, h5, h6) + :not(.colist),
+.boostlook.boostlook .colist td > :not(h1, h2, h3, h4, h5, h6) + *,
+.boostlook.boostlook blockquote > :not(h1, h2, h3, h4, h5, h6) + *,
+.boostlook.boostlook #content li > :not(h1, h2, h3, h4, h5, h6) + :not(.colist),
+.boostlook.boostlook .listitem > :not(h1, h2, h3, h4, h5, h6) + *,
+.boostlook.boostlook dd > :not(h1, h2, h3, h4, h5, h6) + *,
+.boostlook.boostlook .partintro > :not(h1, h2, h3, h4, h5, h6) + *,
+.boostlook.boostlook details > :not(h1, h2, h3, h4, h5, h6) + *,
+.boostlook.boostlook:not(:has(.doc)) :is(.section, .chapter, .refentry, .refsection, .refsect1, .refsect2, .refsect3, .book, .article, .document, .preface, .appendix, .simplesect, .blockquote, .sidebar) > :not(h1, h2, h3, h4, h5, h6) + *,
+.boostlook.boostlook:not(:has(.doc)) :is(div.note, div.tip, div.important, div.caution, div.warning, div.blurb) td > :not(h1, h2, h3, h4, h5, h6) + *,
+.boostlook.boostlook#libraryReadMe > :not(h1, h2, h3, h4, h5, h6) + *,
+.boostlook:where(:not(:has(.doc))) p + p {
+  margin-top: var(--doc-block-gap, 1rem);
+}
+
+.boostlook.boostlook #content li > :is(.ulist, .olist, .dlist, .colist),
+.boostlook.boostlook .listitem > :is(.itemizedlist, .orderedlist, .variablelist),
+.boostlook.boostlook .colist.arabic {
+  margin-top: var(--padding-padding-2xs, 0.5rem);
+}
+
+.boostlook:not(:has(.doc)) .section + .section,
+.boostlook:not(:has(.doc)) .refsection + .refsection,
+.boostlook:not(:has(.doc)) :is(.section, .refsection) > .titlepage + *,
+.boostlook:not(:has(.doc)) .titlepage > * + * {
+  margin-top: 0;
+}
+
+.boostlook:not(:has(.doc)) :is(.section, .refsection) > .titlepage {
+  margin-bottom: var(--doc-heading-gap, 0.75rem);
+}
+
+.boostlook:not(:has(.doc)) :is(.chapter, .book, .article, .document, .refentry) > .titlepage:first-child {
+  margin-bottom: var(--doc-heading-gap, 0.75rem);
+}
+
+/* Markdown lists — bare <ul>/<ol> from markdown (site components, READMEs)
+   that lack Antora's .ulist/.olist wrappers. Tailwind's preflight strips the
+   markers, indent and margins on the site, and boostlook's Antora list rules
+   never match these, so restore them here. Scoped :where(:not(:has(.doc))) and
+   :where(:not([class])) so only bare markdown lists are touched, never Antora
+   or classed nav/tab lists, and with no added specificity. */
+.boostlook:where(:not(:has(.doc))) :is(ul, ol):where(:not([class])) {
+  margin: var(--doc-block-gap, 1rem) 0;
+  padding-left: var(--doc-list-indent, 1.5rem);
+}
+.boostlook:where(:not(:has(.doc))) ul:where(:not([class])) {
+  list-style: disc;
+}
+.boostlook:where(:not(:has(.doc))) ol:where(:not([class])) {
+  list-style: decimal;
+}
+.boostlook:where(:not(:has(.doc))) :is(ul, ol):where(:not([class])) li + li {
+  margin-top: var(--padding-padding-2xs, 0.5rem);
+}
+.boostlook:where(:not(:has(.doc))) li > :is(ul, ol):where(:not([class])) {
+  margin: var(--padding-padding-2xs, 0.5rem) 0 0;
+}
+
+.boostlook .olist .imageblock .content,
+.boostlook .ulist .imageblock .content {
+  margin-bottom: var(--padding-padding-xs, 0.75rem);
+}
+
+/* Special paragraph cases */
+.boostlook table p,
+.boostlook ul p {
+  margin: 0;
+}
+
+/* Link Styling */
+.boostlook a,
+.boostlook .doc a {
+  color: var(--text-main-text-link-blue, #026a9f);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+/* Content body links: underline per Figma. Scoped to content block classes so
+   it covers BOTH Antora (.doc) and standalone AsciiDoctor (#content, no .doc);
+   nav/TOC links (.nav-list / #toc .sectlevel*) are unaffected. Color comes from
+   the base .boostlook a rule (--text-main-text-link-blue = #0077B8). */
+.boostlook .paragraph a:not(.anchor),
+.boostlook .ulist a:not(.anchor),
+.boostlook .olist a:not(.anchor),
+.boostlook .dlist a:not(.anchor) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Link Hover States */
+.boostlook a:hover,
+.boostlook .doc a:hover {
+  color: var(--text-states-text-warning, #FF9442);
+  cursor: pointer;
+}
+
+/* Emphasis within code */
+.boostlook code em,
+.boostlook code i,
+.boostlook pre em,
+.boostlook pre i {
+  font-family: "Monaspace Xenon", monospace;
+  font-size: inherit;
+  font-style: italic;
+}
+
+.boostlook em {
+  font-family: inherit;
+  font-size: inherit;
+  font-style: italic;
+}
+
+/* Text Emphasis */
+.boostlook b,
+.boostlook strong {
+  font-weight: 500;
+  font-variation-settings: "wght" 500, "wdth" 95;
+  color: var(--text-main-text-primary, #050816);
+  text-shadow: none;
+}
+
+/* Comments within code (inline and blocks) */
+.boostlook code span.c,
+.boostlook code span.ch,
+.boostlook code span.cm,
+.boostlook code span.cp,
+.boostlook code span.cpf,
+.boostlook code span.c1,
+.boostlook code span.cs,
+.boostlook code span.comment {
+  font-family: "Monaspace Xenon", monospace;
+  font-style: italic;
+}

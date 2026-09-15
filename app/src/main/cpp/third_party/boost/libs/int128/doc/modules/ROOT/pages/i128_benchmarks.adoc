@@ -1,0 +1,240 @@
+////
+Copyright 2025 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#i128_benchmarks]
+= `int128` Benchmarks
+:idprefix: i128_benchmarks_
+
+== Methodology
+
+Every cell below is the total time in microseconds that one operation takes over a whole vector of random values, so lower is better.
+The vector holds operands of random width (32, 64, 96, or 128 bits, e.g. 2x1 words, 1x2 words), each operation is evaluated as `op(vec[i], vec[i + 1])` across the vector, and the whole vector is walked several times.
+Each platform states its element count and pass count, and therefore how many operations a cell covers.
+The `Comparisons` row is the total of all six relational operators (`==`, `!=`, `<`, `<=`, `>`, `>=`) over that same vector, which is why it costs roughly six arithmetic rows.
+
+On most platforms we use the builtin `\__int128` as the reference benchmark.
+When this is unavailable (such as on 32-bit architectures) we use `boost::multiprecision::int128` (abbreviated as `boost::mp::int128`) as it is widely used, and known to be portable.
+On MSVC platforms we use as reference `std::_Signed128` from the header `<__msvc_int128.hpp>` since this is bundled with their compiler.
+Lastly, when available, the benchmarks are also run with `absl::int128` which is the 128-bit signed integer from the https://abseil.io[Abseil Libraries].
+Linux and macOS take Abseil from a package; Windows has none, so it is built from source at a pinned release with the same compiler and optimization flags as the rest of the table.
+Abseil only uses a native 128-bit type when the compiler has one, which MSVC does not, so its portable path is what the Windows rows measure.
+
+NOTE: Each platform reports a single run, several of them from shared CI runners, so treat small differences as noise.
+
+[#i128_benchmarks_running]
+== Running the Benchmarks
+
+The driver is `test/benchmark_i128.cpp`. From a Boost tree with its headers staged (`b2 headers`), build it in release mode and pass `--json` to have it write out a data set:
+
+[source, shell]
+----
+g++ -std=c++20 -O2 -DNDEBUG -I . libs/int128/test/benchmark_i128.cpp -o benchmark_i128
+./benchmark_i128 --json i128.json
+----
+
+Timings are printed to stderr as they are measured, so a run is readable without the data set.
+`--elements` and `--repetitions` shrink the run, which is what the emulated platforms use.
+
+From the root of a Boost tree, `.github/scripts/run_benchmarks.sh --compiler g++ --out <dir>` builds and runs both drivers exactly as CI does and leaves a complete data set folder behind. It takes its include path from the checked out libraries, so it needs no staged headers.
+
+The `benchmarks.yml` workflow runs both drivers on every platform documented here and uploads one `benchmarks-<os>-<arch>` artifact per platform.
+It runs on every pull request, and each job's summary compares its fresh numbers against the published ones, so a regression is visible without downloading anything.
+To refresh this page, unpack those artifacts into `doc/modules/ROOT/data` and run `doc/render_benchmarks.py`, which rewrites every table and plot below from the data sets.
+
+// BENCHMARK-RESULTS-GENERATED
+
+[#i128_linux]
+== Linux
+
+=== x86_64
+
+Measured with GCC 14.2 (pass:[C++]20): 5 passes over 20,000,000 element pairs (100,000,000 operations per cell).
+
+[cols="1,>1,>1,>1,>1"]
+|===
+| Operation | `__int128` | `int128` | `boost::mp::int128` | `absl::int128`
+
+| Comparisons | 575,065 | 500,451 | 1,703,153 | 503,204
+| Addition | 65,874 | 60,371 | 176,054 | 60,901
+| Subtraction | 65,944 | 72,082 | 569,596 | 71,309
+| Multiplication | 86,629 | 74,522 | 196,324 | 74,967
+| Division | 999,372 | 978,885 | 985,280 | 970,981
+| Modulo | 940,401 | 963,188 | 1,010,396 | 918,835
+|===
+
+image::i128_graphs/linux/x64_relative_performance.png[x64 Relative Performance, width=100%]
+
+=== ARM64
+
+Measured with GCC 14.2 (pass:[C++]20): 5 passes over 20,000,000 element pairs (100,000,000 operations per cell).
+
+[cols="1,>1,>1,>1,>1"]
+|===
+| Operation | `__int128` | `int128` | `boost::mp::int128` | `absl::int128`
+
+| Comparisons | 1,548,448 | 978,632 | 2,358,441 | 1,576,854
+| Addition | 86,459 | 87,101 | 221,898 | 88,399
+| Subtraction | 87,087 | 85,946 | 455,419 | 86,913
+| Multiplication | 84,919 | 84,091 | 187,422 | 83,956
+| Division | 814,967 | 767,734 | 966,484 | 812,755
+| Modulo | 839,380 | 767,831 | 953,283 | 841,903
+|===
+
+image::i128_graphs/linux/ARM64_relative_performance.png[ARM64 Relative Performance, width=100%]
+
+=== S390x
+
+Measured with GCC 12.2 (pass:[C++]20): 5 passes over 2,000,000 element pairs (10,000,000 operations per cell).
+
+[cols="1,>1,>1,>1,>1"]
+|===
+| Operation | `__int128` | `int128` | `boost::mp::int128` | `absl::int128`
+
+| Comparisons | 785,777 | 708,911 | 2,059,404 | 525,305
+| Addition | 50,685 | 44,057 | 258,246 | 37,090
+| Subtraction | 50,668 | 41,357 | 303,965 | 41,352
+| Multiplication | 53,734 | 36,512 | 150,617 | 36,708
+| Division | 752,827 | 682,729 | 919,962 | 752,655
+| Modulo | 802,322 | 720,485 | 851,901 | 796,760
+|===
+
+image::i128_graphs/linux/s390x_relative_performance.png[s390x Relative Performance, width=100%]
+
+=== PPC64LE
+
+Measured with GCC 12.2 (pass:[C++]20): 5 passes over 2,000,000 element pairs (10,000,000 operations per cell).
+
+[cols="1,>1,>1,>1"]
+|===
+| Operation | `__int128` | `int128` | `boost::mp::int128`
+
+| Comparisons | 428,645 | 462,487 | 1,021,098
+| Addition | 24,939 | 16,225 | 118,021
+| Subtraction | 104,630 | 14,546 | 172,685
+| Multiplication | 16,136 | 16,268 | 88,742
+| Division | 614,489 | 509,815 | 629,501
+| Modulo | 627,865 | 686,382 | 642,930
+|===
+
+image::i128_graphs/linux/ppc64le_relative_performance.png[ppc64le Relative Performance, width=100%]
+
+=== x86_32
+
+NOTE: This platform has no hardware type so we compare relative to `boost::mp::int128`
+
+Measured with GCC 14.2 (pass:[C++]20): 5 passes over 10,000,000 element pairs (50,000,000 operations per cell).
+
+[cols="1,>1,>1"]
+|===
+| Operation | `int128` | `boost::mp::int128`
+
+| Comparisons | 1,803,323 | 2,166,376
+| Addition | 159,907 | 1,198,244
+| Subtraction | 178,360 | 1,416,733
+| Multiplication | 213,890 | 1,726,368
+| Division | 1,711,915 | 2,680,645
+| Modulo | 1,706,134 | 2,539,888
+|===
+
+image::i128_graphs/linux/x86_relative_performance.png[x86 Relative Performance, width=100%]
+
+=== ARM32
+
+NOTE: This platform has no hardware type so we compare relative to `boost::mp::int128`
+
+Measured with GCC 12.2 (pass:[C++]20): 5 passes over 2,000,000 element pairs (10,000,000 operations per cell).
+
+[cols="1,>1,>1"]
+|===
+| Operation | `int128` | `boost::mp::int128`
+
+| Comparisons | 1,199,464 | 1,149,576
+| Addition | 90,313 | 1,105,341
+| Subtraction | 83,826 | 1,065,408
+| Multiplication | 128,179 | 1,710,617
+| Division | 3,477,343 | 5,506,901
+| Modulo | 3,495,645 | 5,094,644
+|===
+
+image::i128_graphs/linux/ARM32_relative_performance.png[ARM32 Relative Performance, width=100%]
+
+[#i128_windows]
+== Windows
+
+=== x86_64
+
+Measured with MSVC 14.51 (pass:[C++]20): 5 passes over 20,000,000 element pairs (100,000,000 operations per cell).
+
+[cols="1,>1,>1,>1,>1"]
+|===
+| Operation | `std::_Signed128` | `int128` | `boost::mp::int128` | `absl::int128`
+
+| Comparisons | 1,313,422 | 1,301,134 | 4,219,069 | 1,310,527
+| Addition | 104,308 | 105,315 | 2,122,367 | 92,929
+| Subtraction | 101,850 | 100,240 | 2,328,494 | 93,068
+| Multiplication | 167,872 | 112,184 | 3,004,661 | 114,658
+| Division | 938,908 | 1,233,042 | 4,238,571 | 17,581,284
+| Modulo | 1,101,512 | 1,330,229 | 4,187,828 | 17,626,117
+|===
+
+image::i128_graphs/windows/x64_relative_performance.png[x64 Relative Performance, width=100%]
+
+=== ARM64
+
+Measured with MSVC 14.44 (pass:[C++]20): 5 passes over 20,000,000 element pairs (100,000,000 operations per cell).
+
+[cols="1,>1,>1,>1,>1"]
+|===
+| Operation | `std::_Signed128` | `int128` | `boost::mp::int128` | `absl::int128`
+
+| Comparisons | 1,163,962 | 1,124,237 | 2,892,406 | 1,176,305
+| Addition | 88,279 | 83,389 | 1,604,518 | 86,567
+| Subtraction | 88,880 | 86,568 | 1,766,980 | 88,994
+| Multiplication | 532,086 | 81,119 | 2,389,516 | 129,947
+| Division | 1,507,951 | 1,480,214 | 3,623,405 | 10,773,260
+| Modulo | 1,720,557 | 1,443,956 | 3,531,333 | 10,797,356
+|===
+
+image::i128_graphs/windows/ARM64_relative_performance.png[ARM64 Relative Performance, width=100%]
+
+=== x86_32
+
+Measured with MSVC 14.51 (pass:[C++]20): 5 passes over 10,000,000 element pairs (50,000,000 operations per cell).
+
+[cols="1,>1,>1,>1,>1"]
+|===
+| Operation | `std::_Signed128` | `int128` | `boost::mp::int128` | `absl::int128`
+
+| Comparisons | 1,642,521 | 1,501,096 | 2,486,760 | 1,517,123
+| Addition | 73,033 | 58,313 | 1,218,478 | 55,079
+| Subtraction | 517,398 | 66,889 | 1,314,906 | 57,791
+| Multiplication | 970,404 | 170,877 | 2,302,831 | 3,865,486
+| Division | 2,840,529 | 2,663,730 | 3,362,691 | 9,883,544
+| Modulo | 2,390,312 | 2,752,450 | 3,255,144 | 9,862,440
+|===
+
+image::i128_graphs/windows/x86_relative_performance.png[x86 Relative Performance, width=100%]
+
+[#i128_mac]
+== macOS
+
+=== ARM64 (Apple Silicon)
+
+Measured with Apple Clang 21.0 (pass:[C++]20): 5 passes over 20,000,000 element pairs (100,000,000 operations per cell).
+
+[cols="1,>1,>1,>1,>1"]
+|===
+| Operation | `__int128` | `int128` | `boost::mp::int128` | `absl::int128`
+
+| Comparisons | 479,219 | 358,275 | 1,035,078 | 405,457
+| Addition | 152,489 | 90,873 | 444,144 | 72,358
+| Subtraction | 51,306 | 75,991 | 383,429 | 87,675
+| Multiplication | 60,826 | 49,480 | 205,901 | 64,798
+| Division | 1,363,999 | 1,378,656 | 1,893,255 | 1,372,411
+| Modulo | 1,534,656 | 1,435,001 | 2,223,197 | 1,490,100
+|===
+
+image::i128_graphs/macos/ARM64_relative_performance.png[ARM64 Relative Performance, width=100%]

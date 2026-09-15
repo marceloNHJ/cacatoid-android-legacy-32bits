@@ -1,0 +1,141 @@
+[/
+    Copyright (c) 2023-2026 Ivica Siladic, Bruno Iljazovic, Korina Simicevic
+    Distributed under the Boost Software License, Version 1.0.
+    (See accompanying file LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
+]
+
+[section:disconnecting_the_client Disconnecting the Client]
+[nochunk]
+
+The __Client__ remains active until it is either destroyed or explicitly stopped.
+In idle mode, the __Client__ periodically sends __PINGREQ__ to the Broker to maintain a stable connection.
+
+The proper way to stop the __Client__ is by calling either [refmem mqtt_client cancel] or [refmem mqtt_client async_disconnect].
+Invoking [refmem mqtt_client cancel] results in the __Client__ closing the connection to the Broker and cancelling all outstanding
+asynchronous operations.
+On the other hand, [refmem mqtt_client async_disconnect] will first attempt to send a __DISCONNECT__ packet
+[footnote The __Client__ will attempt to send the __DISCONNECT__ packet for `5 seconds`. Regardless of the outcome, the connection will be closed.]
+to the Broker to notify it about the reason for disconnection,
+then close the connection and cancel all outstanding asynchronous operations (equal effect as [refmem mqtt_client cancel]).
+
+[important Regardless of the method used to stop the __Client__, it is recommended to ensure that all the previous asynchronous operations are
+completed. Otherwise, they *will be cancelled*.]
+
+[refmem mqtt_client cancel] performs an immediate local shutdown. [refmem mqtt_client async_disconnect] performs
+a graceful MQTT shutdown if it successfully sends the __DISCONNECT__ packet, followed by the same local cleanup.
+In both cases, operations still pending on that run complete with
+`boost::asio::error::operation_aborted` and the Client's resources are released. If the __Client__ was the only
+source of work, the execution context (__IOC__) will stop due to a lack of work.
+
+[note The __Client__'s destructor will also call [refmem mqtt_client cancel]. ]
+
+[heading Calls made after stopping the Client]
+
+Both [refmem mqtt_client cancel] and [refmem mqtt_client async_disconnect] immediately leave the `mqtt_client`
+object in a stopped, reusable state. Communication operations initiated through that object after either call
+complete with `boost::asio::error::operation_aborted` until [refmem mqtt_client async_run] is invoked again.
+They are not queued for a later restart.
+
+The operations that belonged to the previous run continue only for as long as needed to shut that run down.
+[refmem mqtt_client cancel] cancels them immediately. [refmem mqtt_client async_disconnect] instead keeps the
+previous connection alive for up to `5 seconds` while it attempts to send the __DISCONNECT__ packet. A later call
+to [refmem mqtt_client cancel] applies to the current state of the `mqtt_client` object and does not shorten that
+already-started disconnect attempt. To cancel the disconnect attempt itself, associate a cancellation slot with
+the [refmem mqtt_client async_disconnect] completion token and emit a terminal cancellation signal.
+
+The following code snippet will showcase a scenario of disconnecting the __Client__ and its interaction with other
+asynchronous operations.
+
+[heading Example: immediate disconnection and its impact on outstanding asynchronous operations]
+
+The following code snippet is an example of publishing a "Hello World!" message to the Broker with QoS `0`,
+followed by the request to disconnect the __Client__.
+
+```
+int main() {
+    boost::asio::io_context ioc;
+
+    boost::mqtt5::mqtt_client<boost::asio::ip::tcp::socket> client(ioc);
+    client.brokers("<your-mqtt-broker>", 1883)
+        .async_run(boost::asio::detached);
+
+    client.async_publish<boost::mqtt5::qos_e::at_most_once>(
+        "<topic>", "Hello world!",
+        boost::mqtt5::retain_e::no, boost::mqtt5::publish_props {},
+        [](boost::mqtt5::error_code ec) {
+            std::cout << ec.message() << std::endl;
+        }
+    );
+    
+    client.async_disconnect(boost::asio::detached);
+
+    ioc.run();
+}
+```
+
+Suppose the Broker is available and the __Client__ can successfully connect to it, then the following 
+order of events will unfold:
+
+# The Client will successfully establish a connection to the Broker.
+# The Client will send a __DISCONNECT__ packet with Reason Code `0x00` (`Normal Disconnection`).
+
+It is important to note that the __PUBLISH__ packet containing the "Hello World!" message will not be transmitted.
+As outlined in the `Packet Ordering` in [link mqtt5.optimising_communication Optimising communication] section,
+[refmem mqtt_client async_publish] and [refmem mqtt_client async_disconnect] will place their corresponding
+packets in the queue. However, __DISCONNECT__ packets are prioritised and sent exclusively, ahead of other queued packets.
+Therefore, the connection will terminate immediately.
+
+If the __Client__ cannot establish a connection to the Broker,
+it will be stopped after `5 seconds`, which is the amount of time it will spend
+trying to send the __DISCONNECT__ packet to the Broker before quitting.
+This timeout mechanism ensures that the __Client__ does not indefinitely wait to disconnect,
+preserving resources and maintaining efficient operation.
+
+In this case, the proper way to disconnect would be to call [refmem mqtt_client async_disconnect] after the 
+[refmem mqtt_client async_publish] has been completed.
+
+```
+    client.async_publish<boost::mqtt5::qos_e::at_most_once>(
+        "<topic>", "Hello world!",
+        boost::mqtt5::retain_e::no, boost::mqtt5::publish_props {},
+        [&client](boost::mqtt5::error_code ec) {
+            std::cout << ec.message() << std::endl;
+            client.async_disconnect(boost::asio::detached);
+        }
+    );
+```
+
+[section:reusing_the_client Restarting the Client After Disconnection]
+
+Restarting a __Client__ is straightforward and requires invoking [refmem mqtt_client async_run].
+The __Client__ is configurable again in the interval between stopping and restarting.
+See [link mqtt5.getting_started.configuration Configuring Your MQTT Connection] for more information.
+
+Because [refmem mqtt_client async_disconnect] immediately makes the `mqtt_client` object reusable, configuration
+changes and the next [refmem mqtt_client async_run] apply to a new run; they do not affect the connection that is
+still completing its disconnect attempt.
+
+```
+int main() {
+    boost::asio::io_context ioc;
+
+    boost::mqtt5::mqtt_client<boost::asio::ip::tcp::socket> client(ioc);
+    client.brokers("<your-mqtt-broker>", 1883)
+        .async_run(boost::asio::detached);
+
+    client.async_disconnect(boost::asio::detached);
+
+    // The Client can be reconfigured again.
+    client.connect_property(boost::mqtt5::prop::session_expiry_interval, 120)
+        .keep_alive(30)
+        .async_run(boost::asio::detached); // Restart the Client again.
+
+    // Use the Client...
+
+    ioc.run();
+}
+```
+
+[endsect] [/reusing_the_client]
+
+[endsect] [/disconnecting_the_client]

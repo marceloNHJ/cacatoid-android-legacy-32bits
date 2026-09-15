@@ -1,0 +1,64 @@
+////
+Copyright 2025 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#cstdlib]
+= `<cstdlib>`
+:idprefix: cstdlib_
+
+From the `<cstdlib>` header we support functions and structures that are analogous to https://en.cppreference.com/w/cpp/numeric/math/div[`std::div`].
+These are of particular importance with this library since unlike a hardware type, the compiler may not be able to optimize a division followed by a modulo operation.
+Knuth's algorithm naturally returns both so it costs nearly nothing above a division or modulo to get both results.
+
+[source, c++]
+----
+#include <boost/int128/cstdlib.hpp>
+----
+
+[#div_structs]
+== Structures
+
+[source, c++]
+----
+namespace boost {
+namespace int128 {
+
+struct u128div_t
+{
+    uint128 quot;
+    uint128 rem;
+};
+
+struct i128div_t
+{
+    int128 quot;
+    int128 rem;
+};
+
+} // namespace int128
+} // namespace boost
+----
+
+[#div_source]
+== div
+
+Using the structures defined above, the `div` function computes both quotient and remainder simultaneously:
+
+[source, c++]
+----
+namespace boost {
+namespace int128 {
+
+BOOST_INT128_HOST_DEVICE constexpr u128div_t div(uint128 lhs, uint128 rhs) noexcept;
+
+BOOST_INT128_HOST_DEVICE constexpr i128div_t div(int128 lhs, int128 rhs) noexcept;
+
+} // namespace int128
+} // namespace boost
+----
+
+For any non-zero divisor the `quot` and `rem` values, including their sign, are the same as if you performed division and modulo separately.
+
+Division by zero is handled differently from the `operator/` and `operator%` operators. Those operators leave a zero divisor undefined (matching the built-in `__int128` types), whereas `div` detects a zero divisor and returns a zero-initialized result (`quot == 0` and `rem == 0`) instead. A zero numerator with a non-zero divisor likewise returns `{0, 0}`.

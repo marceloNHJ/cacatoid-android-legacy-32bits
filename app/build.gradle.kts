@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.cacatoid"
-        minSdk = 28
+        minSdk = 27
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -22,7 +22,7 @@ android {
         // The native searcher relies on unsigned __int128 for range math, which
         // clang only supports on 64-bit targets. Restrict to 64-bit ABIs.
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            abiFilters += "armeabi-v7a"
         }
     }
 

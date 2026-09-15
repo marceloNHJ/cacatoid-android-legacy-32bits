@@ -33,6 +33,10 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         ripemd160.cpp
         base58.cpp)
 
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boost/libs/multiprecision/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boost/libs/config/include)
+
 target_compile_features(${CMAKE_PROJECT_NAME} PRIVATE cxx_std_17)
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -O3 -funroll-loops)
 

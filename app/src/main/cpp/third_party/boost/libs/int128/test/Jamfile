@@ -1,0 +1,179 @@
+# Copyright 2025 Matt Borland
+# Distributed under the Boost Software License, Version 1.0.
+# https://www.boost.org/LICENSE_1_0.txt
+
+require-b2 5.0.1 ;
+import-search /boost/config/checks ;
+import config : requires ;
+import modules ;
+import testing ;
+
+project : requirements
+
+    <warnings>extra
+
+    <toolset>gcc:<cxxflags>-Wsign-conversion
+    <toolset>gcc:<cxxflags>-Wconversion
+    <toolset>gcc:<cxxflags>-Wundef
+    <toolset>gcc:<cxxflags>-Wold-style-cast
+    <toolset>gcc:<cxxflags>-Wfloat-equal
+    <toolset>gcc:<cxxflags>-Wshadow
+    <toolset>gcc:<cxxflags>-Wcast-qual
+    <toolset>gcc:<cxxflags>-Wcast-align
+    <toolset>gcc:<cxxflags>-Wlogical-op
+    <toolset>gcc:<cxxflags>-Wdouble-promotion
+    <toolset>gcc:<cxxflags>-Wformat=2
+    <toolset>gcc:<cxxflags>-Wstack-protector
+
+    <toolset>clang:<cxxflags>-Wsign-conversion
+    <toolset>clang:<cxxflags>-Wconversion
+    <toolset>clang:<cxxflags>-Wundef
+    <toolset>clang:<cxxflags>-Wold-style-cast
+    <toolset>clang:<cxxflags>-Wfloat-equal
+    <toolset>clang:<cxxflags>-Wshadow
+    <toolset>clang:<cxxflags>-Wcast-qual
+    <toolset>clang:<cxxflags>-Wcast-align
+    <toolset>clang:<cxxflags>-Wdouble-promotion
+    <toolset>clang:<cxxflags>-Wformat=2
+    <toolset>clang:<cxxflags>-Wnull-dereference
+    <toolset>clang:<cxxflags>-Wthread-safety
+    <toolset>clang:<cxxflags>-Wunused-lambda-capture
+    <toolset>clang:<cxxflags>-Wassign-enum
+
+    <toolset>msvc:<warnings-as-errors>on
+    <toolset>clang:<warnings-as-errors>on
+    <toolset>gcc:<warnings-as-errors>on
+
+    # The b2 sanitizer features only add -fsanitize flags; define the macros the
+    # tests use to skip checks that intentionally exercise UB (e.g. shift tests).
+    <undefined-sanitizer>on:<define>UBSAN=1
+    <undefined-sanitizer>norecover:<define>UBSAN=1
+    <address-sanitizer>on:<define>ASAN=1
+    <address-sanitizer>norecover:<define>ASAN=1
+
+  [ requires cxx14_decltype_auto cxx14_generic_lambdas cxx14_return_type_deduction cxx14_variable_templates cxx14_constexpr ]
+  ;
+
+run quick.cpp ;
+
+run test_saturating_arith.cpp ;
+
+run-fail benchmark_u128.cpp : : : [ check-target-builds ../config//has_absl_support : <linkflags>"-labsl_base -labsl_int128" ] ;
+run test_u128.cpp ;
+run test_u128_no_sign_conv.cpp ;
+run test_limits_u128.cpp ;
+
+run-fail benchmark_i128.cpp : : : [ check-target-builds ../config//has_absl_support : <linkflags>"-labsl_base -labsl_int128" ] ;
+run test_i128.cpp ;
+run test_i128_no_sign_conv.cpp ;
+run test_limits_i128.cpp ;
+
+run test_climits.cpp ;
+
+run test_bit.cpp ;
+run test_byte_conversions.cpp ;
+run test_literals.cpp ;
+run test_from_chars_bases.cpp ;
+run test_stream.cpp ;
+
+run test_mixed_type_sign_compare.cpp ;
+run test_mixed_type_sign_conversion.cpp ;
+run test_cross_type_assign.cpp ;
+run test_builtin_parity.cpp ;
+run test_float_mixed_ops.cpp ;
+run test_integer_mixed_ops.cpp ;
+run test_float_conversion.cpp ;
+
+run test_consteval_funcs.cpp ;
+run test_sign_compare.cpp ;
+run test_x64_msvc_div.cpp ;
+
+run test_gcd_lcm.cpp ;
+run test_midpoint.cpp ;
+run test_powm.cpp ;
+run test_ipow.cpp ;
+run test_isqrt.cpp ;
+run test_ckd.cpp ;
+run test_integer_comparison.cpp ;
+
+run test_format.cpp ;
+run test_fmt_format.cpp ;
+
+run test_div.cpp ;
+run test_div_primitives.cpp ;
+run test_int_div.cpp ;
+
+run test_num_digits.cpp ;
+run test_spaceship_operator.cpp ;
+run test_to_string.cpp ;
+
+# Warnings about padding propagate out of <utility>
+run test_hash.cpp : : : <toolset>msvc:<cxxflags>/wd4324 ;
+run test_container_hash.cpp : : : <toolset>msvc:<cxxflags>/wd4324 ;
+
+run test_boundaries.cpp ;
+run test_constexpr_boundaries.cpp ;
+run test_layout.cpp ;
+
+# Make sure we run the examples as well
+run ../example/hello_world.cpp ;
+run ../example/construction.cpp ;
+run ../example/bit.cpp ;
+run ../example/byte_conversions.cpp ;
+run ../example/saturating_arithmetic.cpp ;
+run ../example/checked_arithmetic.cpp ;
+run ../example/integer_comparison.cpp ;
+run ../example/mixed_type_arithmetic.cpp ;
+run ../example/mixed_float_arithmetic.cpp ;
+run ../example/stream.cpp ;
+run ../example/basic_arithmetic.cpp ;
+run ../example/math_and_random.cpp ;
+run ../example/charconv.cpp ;
+run ../example/container_hash.cpp : : : <toolset>msvc:<cxxflags>/wd4324 ;
+run ../example/fmt_format.cpp ;
+run ../example/format.cpp ;
+run ../example/cstdlib.cpp ;
+run ../example/numeric_algorithms.cpp ;
+run ../example/integer_division.cpp ;
+run ../example/rollover.cpp ;
+run ../example/to_string.cpp ;
+
+run limits_link_1.cpp limits_link_2.cpp limits_link_3.cpp ;
+
+# Github Issues
+run decimal_github_issue_1260.cpp ;
+run github_issue_207.cpp ;
+run github_issue_210.cpp ;
+run github_issue_221.cpp ;
+run github_issue_272.cpp ;
+run github_issue_377.cpp ;
+run github_issue_432.cpp ;
+compile github_issue_477.cpp ;
+run github_issue_479.cpp ;
+compile github_issue_480.cpp ;
+
+# Compilation of individual headers
+compile compile_tests/int128_master_header_compile.cpp ;
+compile compile_tests/bit_compile.cpp ;
+compile compile_tests/byte_conversions_compile.cpp ;
+compile compile_tests/fmt_format_compile.cpp ;
+compile compile_tests/charconv_compile.cpp ;
+compile compile_tests/climits_compile.cpp ;
+compile compile_tests/cstdlib_compile.cpp ;
+compile compile_tests/format_compile.cpp ;
+compile compile_tests/hash_compile.cpp ;
+compile compile_tests/int128_compile.cpp ;
+compile compile_tests/iostream_compile.cpp ;
+compile compile_tests/limits_compile.cpp ;
+compile compile_tests/literals_compile.cpp ;
+compile compile_tests/numeric_compile.cpp ;
+compile compile_tests/string_compile.cpp ;
+compile compile_tests/random_compile.cpp ;
+compile compile_tests/utilities_compile.cpp ;
+
+compile-fail compile_tests/literals_overflow_fail.cpp ;
+compile-fail compile_tests/literals_base_prefix_fail.cpp ;
+compile-fail compile_tests/literals_invalid_fail.cpp ;
+compile-fail compile_tests/utilities_comparison_fail.cpp ;
+compile-fail compile_tests/byte_conversions_extent_fail.cpp ;
+compile-fail compile_tests/byte_conversions_target_fail.cpp ;

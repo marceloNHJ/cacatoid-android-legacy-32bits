@@ -1,6 +1,8 @@
 #include <jni.h>
 #include <android/log.h>
 
+#include <boost/multiprecision/cpp_int.hpp>
+
 #include <atomic>
 #include <chrono>
 #include <cstring>
@@ -17,7 +19,8 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-using u128 = unsigned __int128;
+using u128 = boost::multiprecision::uint128_t;
+
 using Clock = std::chrono::steady_clock;
 
 namespace {

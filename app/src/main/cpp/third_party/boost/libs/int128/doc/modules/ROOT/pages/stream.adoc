@@ -1,0 +1,55 @@
+////
+Copyright 2025 Matt Borland
+Distributed under the Boost Software License, Version 1.0.
+https://www.boost.org/LICENSE_1_0.txt
+////
+
+[#stream]
+= `<iostream>` Support
+:idprefix: stream_
+
+The following stream operators are available and work similar to built-in integer types.
+
+[source, c++]
+----
+#include <boost/int128/iostream.hpp>
+----
+
+[source, c++]
+----
+namespace boost {
+namespace int128 {
+
+template <typename charT, typename traits>
+std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& os, const int128& v);
+
+template <typename charT, typename traits>
+std::basic_istream<charT, traits>& operator>>(std::basic_istream<charT, traits>& is, int128& v);
+
+template <typename charT, typename traits>
+std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& os, const uint128& v);
+
+template <typename charT, typename traits>
+std::basic_istream<charT, traits>& operator>>(std::basic_istream<charT, traits>& is, uint128& v);
+
+} // namespace int128
+} // namespace boost
+----
+
+== Flags
+
+[#ios]
+The following flags from `<ios>` are honored.
+The base flags (`std::oct`, `std::dec`, `std::hex`) affect both input and output; the remaining flags affect output only.
+
+- `std::oct` - Octal numbers (input and output)
+- `std::dec` - Decimal numbers (input and output)
+- `std::hex` - Hexadecimal numbers (input and output)
+- `std::uppercase` - Uppercase hexadecimal digits on output (e.g. FFFF)
+- `std::nouppercase` - Lowercase hexadecimal digits on output (e.g. ffff)
+- `std::showbase` - Adds a leading base prefix for hex or oct numbers on output (e.g. 0xffff)
+- `std::noshowbase` - Omits the leading base prefix on output (e.g. ffff)
+
+On extraction (`operator>>`) a leading `0x` or `0` base prefix is accepted and consumed for the active base regardless of `showbase`, and hexadecimal input is parsed case-insensitively.
+
+See the xref:examples.adoc#examples_io[IO streaming example] for usage demonstrations.
